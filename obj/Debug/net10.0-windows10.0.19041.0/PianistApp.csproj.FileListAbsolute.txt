@@ -1,0 +1,16 @@
+C:\Users\murph\source\repos\Pianist\bin\Debug\net10.0-windows10.0.19041.0\PianistApp.deps.json
+C:\Users\murph\source\repos\Pianist\bin\Debug\net10.0-windows10.0.19041.0\PianistApp.dll
+C:\Users\murph\source\repos\Pianist\bin\Debug\net10.0-windows10.0.19041.0\PianistApp.pdb
+C:\Users\murph\source\repos\Pianist\bin\Debug\net10.0-windows10.0.19041.0\Microsoft.Web.WebView2.Core.dll
+C:\Users\murph\source\repos\Pianist\bin\Debug\net10.0-windows10.0.19041.0\Microsoft.Web.WebView2.Core.Projection.dll
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\PianistApp.csproj.AssemblyReference.cache
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\PianistApp.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\PianistApp.AssemblyInfoInputs.cache
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\PianistApp.AssemblyInfo.cs
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\PianistApp.csproj.CoreCompileInputs.cache
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\XamlC.stamp
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\PianistApp.csproj.Up2Date
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\PianistApp.dll
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\refint\PianistApp.dll
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\PianistApp.pdb
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\ref\PianistApp.dll

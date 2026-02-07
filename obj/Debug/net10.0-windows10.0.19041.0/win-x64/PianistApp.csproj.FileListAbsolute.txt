@@ -1,0 +1,12 @@
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\win-x64\PianistApp.csproj.AssemblyReference.cache
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\win-x64\mauiimage.inputs
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\win-x64\mauifont.inputs
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\win-x64\mauisplash.inputs
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\win-x64\mauisplash.stamp
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\win-x64\mauifont.stamp
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\win-x64\mauiimage.stamp
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\win-x64\mauiimage.outputs
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\win-x64\PianistApp.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\win-x64\PianistApp.AssemblyInfoInputs.cache
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\win-x64\PianistApp.AssemblyInfo.cs
+C:\Users\murph\source\repos\Pianist\obj\Debug\net10.0-windows10.0.19041.0\win-x64\PianistApp.csproj.CoreCompileInputs.cache
