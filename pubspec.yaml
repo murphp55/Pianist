@@ -32,6 +32,8 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
+  just_audio: ^0.9.40
+  logger: ^2.5.0
   path_provider: ^2.1.5
   provider: ^6.1.5
 
@@ -56,6 +58,11 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Metronome audio asset (commented out until file is added)
+  # The app will work in visual-only mode without the audio file
+  # assets:
+  #   - assets/sounds/metronome_click.mp3
 
   # To add assets to your application, add an assets section, like this:
   # assets:

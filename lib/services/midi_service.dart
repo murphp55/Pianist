@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
+import 'app_logger.dart';
 import 'practice_evaluator.dart';
 
 class MidiDevice {
@@ -39,8 +40,11 @@ class PlatformMidiService implements MidiService {
   Future<List<MidiDevice>> listDevices() async {
     try {
       final result = await _methodChannel.invokeMethod<List<dynamic>>('list');
-      if (result == null) return [];
-      return result
+      if (result == null) {
+        AppLogger.warning('MIDI list returned null');
+        return [];
+      }
+      final devices = result
           .map((entry) => entry as Map<dynamic, dynamic>)
           .map((entry) => MidiDevice(
                 id: entry['id']?.toString() ?? '',
@@ -48,7 +52,16 @@ class PlatformMidiService implements MidiService {
               ))
           .where((device) => device.id.isNotEmpty)
           .toList();
+      AppLogger.info('Found ${devices.length} MIDI devices');
+      return devices;
     } on MissingPluginException {
+      AppLogger.warning('MIDI plugin not available, using mock devices');
+      return [];
+    } on PlatformException catch (e, stack) {
+      AppLogger.error('Platform error listing MIDI devices', e, stack);
+      return [];
+    } catch (e, stack) {
+      AppLogger.error('Unexpected error listing MIDI devices', e, stack);
       return [];
     }
   }
@@ -56,13 +69,24 @@ class PlatformMidiService implements MidiService {
   @override
   Future<bool> connect(String deviceId) async {
     try {
+      AppLogger.info('Attempting to connect to MIDI device: $deviceId');
       final result =
           await _methodChannel.invokeMethod<bool>('connect', deviceId);
       if (result == true) {
         _ensureListening();
+        AppLogger.info('Successfully connected to MIDI device');
+      } else {
+        AppLogger.warning('MIDI connection returned false');
       }
       return result ?? false;
     } on MissingPluginException {
+      AppLogger.warning('MIDI plugin not available');
+      return false;
+    } on PlatformException catch (e, stack) {
+      AppLogger.error('Platform error connecting to MIDI device', e, stack);
+      return false;
+    } catch (e, stack) {
+      AppLogger.error('Unexpected error connecting to MIDI device', e, stack);
       return false;
     }
   }
@@ -106,8 +130,14 @@ class PlatformMidiService implements MidiService {
     try {
       _noteSubscription = _eventChannel
           .receiveBroadcastStream()
-          .listen(_handleEvent, onError: (_) {});
+          .listen(_handleEvent, onError: (error) {
+        AppLogger.error('MIDI event stream error', error);
+      });
     } on MissingPluginException {
+      AppLogger.warning('MIDI event channel not available');
+      _isListening = false;
+    } catch (e, stack) {
+      AppLogger.error('Failed to start listening to MIDI events', e, stack);
       _isListening = false;
     }
   }
@@ -142,6 +172,10 @@ class MockMidiService implements MidiService {
       timestamp: DateTime.now(),
     ));
   }
+
+  void dispose() {
+    _controller.close();
+  }
 }
 
 class MidiServiceFactory {
@@ -169,5 +203,12 @@ class MidiServiceFactory {
   Future<void> disconnect() async {
     await _platform.disconnect();
     await _fallback?.disconnect();
+  }
+
+  void dispose() {
+    _platform.dispose();
+    if (_fallback is MockMidiService) {
+      (_fallback as MockMidiService).dispose();
+    }
   }
 }

@@ -6,6 +6,7 @@ import 'models/practice_task.dart';
 import 'models/practice_plan.dart';
 import 'viewmodels/app_state.dart';
 import 'widgets/fingering_diagram.dart';
+import 'widgets/metronome_indicator.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -114,26 +115,42 @@ class AppShell extends StatelessWidget {
                   Expanded(
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        final isWide = constraints.maxWidth > 980;
+                        final width = constraints.maxWidth;
+                        // Responsive breakpoints: small (<600), medium (600-980), large (>980)
+                        final isLarge = width > 980;
+                        final isMedium = width > 600 && width <= 980;
                         final planPanel =
                             _PlanPanel(state: state, plan: state.currentPlan);
                         final taskPanel = _TaskPanel(state: state);
 
-                        return isWide
-                            ? Row(
-                                children: [
-                                  Expanded(flex: 3, child: planPanel),
-                                  const SizedBox(width: 16),
-                                  Expanded(flex: 5, child: taskPanel),
-                                ],
-                              )
-                            : Column(
-                                children: [
-                                  Expanded(child: planPanel),
-                                  const SizedBox(height: 16),
-                                  Expanded(child: taskPanel),
-                                ],
-                              );
+                        if (isLarge) {
+                          // Desktop: side-by-side with optimal ratio
+                          return Row(
+                            children: [
+                              Expanded(flex: 3, child: planPanel),
+                              const SizedBox(width: 16),
+                              Expanded(flex: 5, child: taskPanel),
+                            ],
+                          );
+                        } else if (isMedium) {
+                          // Tablet: side-by-side with balanced ratio
+                          return Row(
+                            children: [
+                              Expanded(flex: 2, child: planPanel),
+                              const SizedBox(width: 12),
+                              Expanded(flex: 3, child: taskPanel),
+                            ],
+                          );
+                        } else {
+                          // Mobile: stacked layout
+                          return Column(
+                            children: [
+                              Expanded(child: planPanel),
+                              const SizedBox(height: 12),
+                              Expanded(child: taskPanel),
+                            ],
+                          );
+                        }
                       },
                     ),
                   ),
@@ -155,21 +172,50 @@ class _ConnectionStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: state.isConnected
-                    ? const Color(0xFF1F6E54)
-                    : const Color(0xFFB2A89A),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                state.isConnected ? 'MIDI Live' : 'Offline',
-                style: const TextStyle(color: Colors.white),
+            Semantics(
+              label: state.isConnected
+                  ? 'MIDI device connected'
+                  : 'No MIDI device connected',
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: state.isConnected
+                      ? const Color(0xFF1F6E54)
+                      : const Color(0xFFB2A89A),
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: state.isConnected
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF1F6E54).withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                          )
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      state.isConnected ? Icons.circle : Icons.circle_outlined,
+                      size: 12,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      state.isConnected ? 'MIDI Live' : 'Offline',
+                      style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -198,6 +244,30 @@ class _DeviceDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Empty state when no devices found
+    if (state.devices.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF6EC),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFDE6B35)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline, color: Color(0xFFDE6B35), size: 20),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'No MIDI devices found. Connect a keyboard and click refresh.',
+                style: TextStyle(fontSize: 12, color: Color(0xFF1B1B1B)),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
@@ -234,18 +304,25 @@ class _ConnectionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: state.devices.isEmpty
-          ? null
+    return Tooltip(
+      message: state.devices.isEmpty
+          ? 'No MIDI devices available'
           : state.isConnected
-              ? state.disconnect
-              : state.connect,
-      icon: Icon(state.isConnected ? Icons.link_off : Icons.link),
-      label: Text(state.isConnected ? 'Disconnect' : 'Connect'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor:
-            state.isConnected ? const Color(0xFF2F3B47) : null,
-        foregroundColor: state.isConnected ? Colors.white : null,
+              ? 'Disconnect from MIDI device'
+              : 'Connect to selected MIDI device',
+      child: ElevatedButton.icon(
+        onPressed: state.devices.isEmpty
+            ? null
+            : state.isConnected
+                ? state.disconnect
+                : state.connect,
+        icon: Icon(state.isConnected ? Icons.link_off : Icons.link),
+        label: Text(state.isConnected ? 'Disconnect' : 'Connect'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              state.isConnected ? const Color(0xFF2F3B47) : null,
+          foregroundColor: state.isConnected ? Colors.white : null,
+        ),
       ),
     );
   }
@@ -260,6 +337,7 @@ class _PlanPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -268,11 +346,23 @@ class _PlanPanel extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                      state.selectedPlanIndex == 0
-                          ? 'Daily Session'
-                          : 'Per-Key Extras',
-                      style: Theme.of(context).textTheme.headlineSmall),
+                  child: Row(
+                    children: [
+                      Icon(
+                        state.selectedPlanIndex == 0
+                            ? Icons.today
+                            : Icons.library_music,
+                        size: 24,
+                        color: const Color(0xFF1F6E54),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                          state.selectedPlanIndex == 0
+                              ? 'Daily Session'
+                              : 'Per-Key Extras',
+                          style: Theme.of(context).textTheme.headlineSmall),
+                    ],
+                  ),
                 ),
                 Text(
                   '${plan.sections.fold<int>(0, (sum, section) => sum + section.tasks.length)} tasks',
@@ -352,6 +442,17 @@ class _TaskTile extends StatelessWidget {
   final PracticeResult? result;
   final VoidCallback onTap;
 
+  // Calculate task difficulty (1-3 stars)
+  int _getDifficulty() {
+    final noteCount = task.expectedNotes.length;
+    final tempo = task.tempoBpm;
+
+    // Simple heuristic: combine tempo and note count
+    if (tempo >= 100 || noteCount >= 30) return 3; // Hard
+    if (tempo >= 80 || noteCount >= 20) return 2;  // Medium
+    return 1; // Easy
+  }
+
   @override
   Widget build(BuildContext context) {
     final verdict = result?.verdict;
@@ -369,6 +470,21 @@ class _TaskTile extends StatelessWidget {
             : verdict == TaskVerdict.needsWork
                 ? 'Review'
                 : 'New';
+    final badgeIcon = verdict == TaskVerdict.pass
+        ? Icons.check_circle
+        : verdict == TaskVerdict.completed
+            ? Icons.check
+            : verdict == TaskVerdict.needsWork
+                ? Icons.refresh
+                : Icons.fiber_new;
+    final badgeTooltip = verdict == TaskVerdict.pass
+        ? 'Completed with perfect accuracy'
+        : verdict == TaskVerdict.completed
+            ? 'Marked complete manually'
+            : verdict == TaskVerdict.needsWork
+                ? 'Needs more practice'
+                : 'Not attempted yet';
+    final difficulty = _getDifficulty();
 
     return InkWell(
       onTap: onTap,
@@ -390,8 +506,27 @@ class _TaskTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(task.title,
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(task.title,
+                            style: Theme.of(context).textTheme.titleMedium),
+                      ),
+                      const SizedBox(width: 8),
+                      // Difficulty stars
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(
+                          3,
+                          (index) => Icon(
+                            index < difficulty ? Icons.star : Icons.star_border,
+                            size: 14,
+                            color: const Color(0xFFDE6B35),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 4),
                   Text(task.description,
                       maxLines: 2,
@@ -401,15 +536,26 @@ class _TaskTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: badgeColor,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                badgeLabel,
-                style: const TextStyle(color: Colors.white, fontSize: 12),
+            Tooltip(
+              message: badgeTooltip,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: badgeColor,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(badgeIcon, color: Colors.white, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      badgeLabel,
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -433,6 +579,7 @@ class _TaskPanel extends StatelessWidget {
         (state.expectedIndex + 1).clamp(1, totalNotes == 0 ? 1 : totalNotes);
 
     return Card(
+      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: ListView(
@@ -452,9 +599,20 @@ class _TaskPanel extends StatelessWidget {
                         : const Color(0xFFB2A89A),
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: Text(
-                    state.isRunning ? 'In Session' : 'Idle',
-                    style: const TextStyle(color: Colors.white),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        state.isRunning ? Icons.play_circle : Icons.pause_circle,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        state.isRunning ? 'In Session' : 'Idle',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -462,30 +620,48 @@ class _TaskPanel extends StatelessWidget {
             const SizedBox(height: 8),
             Text(task.description),
             const SizedBox(height: 16),
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
               children: [
                 _ActionButton(
                   label: state.isRunning ? 'Restart' : 'Start',
                   icon: Icons.play_arrow,
-                  onPressed: state.start,
+                  onPressed: state.isConnected ? state.start : null,
+                  tooltip: state.isConnected
+                      ? (state.isRunning
+                          ? 'Restart practice from beginning'
+                          : 'Start practicing this task')
+                      : 'Connect MIDI device to start',
+                  isPrimary: true,
                 ),
-                const SizedBox(width: 8),
                 _ActionButton(
                   label: 'Reset',
                   icon: Icons.replay,
-                  onPressed: state.reset,
+                  onPressed: state.isRunning ? state.reset : null,
+                  tooltip: 'Stop and reset progress counter',
+                  isPrimary: false,
                 ),
-                const SizedBox(width: 8),
                 _ActionButton(
                   label: 'Complete',
                   icon: Icons.check,
-                  onPressed: state.complete,
+                  onPressed: state.isRunning ? state.complete : null,
+                  tooltip: 'Mark task as complete manually',
+                  isPrimary: false,
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Text('Fingering Diagram',
-                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 20),
+            const Divider(height: 1, color: Color(0xFFE0D6C5)),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                const Icon(Icons.piano, size: 20, color: Color(0xFF2F3B47)),
+                const SizedBox(width: 8),
+                Text('Fingering Diagram',
+                    style: Theme.of(context).textTheme.titleMedium),
+              ],
+            ),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
@@ -523,6 +699,10 @@ class _TaskPanel extends StatelessWidget {
               runSpacing: 12,
               children: [
                 _InfoChip(
+                  label: 'Notes',
+                  value: '${task.expectedNotes.length}',
+                ),
+                _InfoChip(
                   label: 'Tempo',
                   value: '${task.tempoBpm} BPM',
                 ),
@@ -532,8 +712,67 @@ class _TaskPanel extends StatelessWidget {
                 ),
               ],
             ),
+            if (task.metronomeRequired) ...[
+              const SizedBox(height: 16),
+              Card(
+                elevation: 2,
+                color: const Color(0xFFFFF6EC),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.music_note,
+                                size: 20, color: Color(0xFF2F3B47)),
+                          ),
+                          const SizedBox(width: 12),
+                          Text('Metronome Beat',
+                              style: Theme.of(context).textTheme.titleMedium),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: state.isRunning
+                                  ? const Color(0xFF1F6E54)
+                                  : const Color(0xFFB2A89A),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              '${task.tempoBpm} BPM',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Center(
+                        child: MetronomeIndicator(
+                          currentBeat: state.currentBeat,
+                          isActive: state.isRunning,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             _FeedbackPanel(state: state),
+            const SizedBox(height: 16),
+            _HelpPanel(),
             const SizedBox(height: 12),
             _DebugPanel(state: state),
           ],
@@ -575,10 +814,16 @@ class _ProgressPanel extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        LinearProgressIndicator(
-          value: progress,
-          minHeight: 10,
-          backgroundColor: const Color(0xFFE0D6C5),
+        TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          tween: Tween<double>(begin: 0, end: progress),
+          builder: (context, value, _) => LinearProgressIndicator(
+            value: value,
+            minHeight: 10,
+            backgroundColor: const Color(0xFFE0D6C5),
+            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF1F6E54)),
+          ),
         ),
       ],
     );
@@ -609,6 +854,7 @@ class _FeedbackPanel extends StatelessWidget {
                     label: 'Expected',
                     value: state.expectedNote,
                     color: const Color(0xFF2F3B47),
+                    icon: Icons.music_note,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -619,6 +865,7 @@ class _FeedbackPanel extends StatelessWidget {
                     color: state.lastWasCorrect
                         ? const Color(0xFF1F6E54)
                         : const Color(0xFFDE6B35),
+                    icon: state.lastWasCorrect ? Icons.check_circle : Icons.cancel,
                   ),
                 ),
               ],
@@ -635,36 +882,48 @@ class _FeedbackTile extends StatelessWidget {
     required this.label,
     required this.value,
     required this.color,
+    required this.icon,
   });
 
   final String label;
   final String value;
   final Color color;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0D6C5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: const Color(0xFF6E6254),
-                  )),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: color,
-                ),
-          ),
-        ],
+    return Semantics(
+      label: '$label: $value',
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE0D6C5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 16, color: const Color(0xFF6E6254)),
+                const SizedBox(width: 6),
+                Text(label,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: const Color(0xFF6E6254),
+                        )),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -675,22 +934,33 @@ class _ActionButton extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onPressed,
+    required this.tooltip,
+    this.isPrimary = false,
   });
 
   final String label;
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
+  final String tooltip;
+  final bool isPrimary;
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon),
-      label: Text(label),
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        backgroundColor: const Color(0xFF1F6E54),
-        foregroundColor: Colors.white,
+    return Tooltip(
+      message: tooltip,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 20),
+        label: Text(label),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          backgroundColor:
+              isPrimary ? const Color(0xFF1F6E54) : const Color(0xFF2F3B47),
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: const Color(0xFFE0D6C5),
+          disabledForegroundColor: const Color(0xFF6E6254),
+          elevation: isPrimary ? 2 : 0,
+        ),
       ),
     );
   }
@@ -734,6 +1004,116 @@ class _InfoChip extends StatelessWidget {
   }
 }
 
+class _HelpPanel extends StatelessWidget {
+  const _HelpPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: const Color(0xFFF5F0E8),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.all(16),
+        title: Row(
+          children: [
+            const Icon(Icons.help_outline, size: 20, color: Color(0xFF2F3B47)),
+            const SizedBox(width: 8),
+            Text('Practice Tips & Shortcuts',
+                style: Theme.of(context).textTheme.titleMedium),
+          ],
+        ),
+        initiallyExpanded: false,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _HelpItem(
+                  icon: Icons.keyboard,
+                  title: 'Getting Started',
+                  description:
+                      'Connect your MIDI keyboard, select a task, and click Start. Play the notes shown in the diagram to progress.',
+                ),
+                const SizedBox(height: 12),
+                _HelpItem(
+                  icon: Icons.timer,
+                  title: 'Metronome Tasks',
+                  description:
+                      'Tasks with metronome require timing accuracy (±20% tolerance). Watch the beat indicator and sync your playing.',
+                ),
+                const SizedBox(height: 12),
+                _HelpItem(
+                  icon: Icons.star,
+                  title: 'Difficulty Stars',
+                  description:
+                      'Tasks are rated 1-3 stars based on tempo and length. Start with easier tasks and work your way up.',
+                ),
+                const SizedBox(height: 12),
+                _HelpItem(
+                  icon: Icons.refresh,
+                  title: 'Quick Actions',
+                  description:
+                      'Use Reset to start over, or Complete to manually mark a task as done if you\'re satisfied with your practice.',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HelpItem extends StatelessWidget {
+  const _HelpItem({
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 20, color: const Color(0xFF2F3B47)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF6E6254),
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _DebugPanel extends StatelessWidget {
   const _DebugPanel({required this.state});
 
@@ -743,15 +1123,32 @@ class _DebugPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return ExpansionTile(
       tilePadding: EdgeInsets.zero,
-      title: Text('Debug Tools',
-          style: Theme.of(context).textTheme.titleSmall),
+      title: Row(
+        children: [
+          const Icon(Icons.bug_report, size: 16, color: Color(0xFF6E6254)),
+          const SizedBox(width: 8),
+          Text('Debug Tools',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleSmall
+                  ?.copyWith(color: const Color(0xFF6E6254))),
+        ],
+      ),
+      initiallyExpanded: false,
       children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: OutlinedButton.icon(
-            onPressed: state.simulateNote,
-            icon: const Icon(Icons.music_note),
-            label: const Text('Simulate Note'),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: state.simulateNote,
+              icon: const Icon(Icons.music_note, size: 18),
+              label: const Text('Simulate Note'),
+              style: OutlinedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
           ),
         ),
       ],
