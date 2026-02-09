@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'models/practice_result.dart';
 import 'models/practice_task.dart';
+import 'models/practice_plan.dart';
 import 'viewmodels/app_state.dart';
 import 'widgets/fingering_diagram.dart';
 
@@ -93,12 +94,29 @@ class AppShell extends StatelessWidget {
               child: Column(
                 children: [
                   _ConnectionStrip(state: state),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      ChoiceChip(
+                        label: const Text('Daily Session'),
+                        selected: state.selectedPlanIndex == 0,
+                        onSelected: (_) => state.selectPlan(0),
+                      ),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: const Text('Per-Key Extras'),
+                        selected: state.selectedPlanIndex == 1,
+                        onSelected: (_) => state.selectPlan(1),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 16),
                   Expanded(
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         final isWide = constraints.maxWidth > 980;
-                        final planPanel = _PlanPanel(state: state);
+                        final planPanel =
+                            _PlanPanel(state: state, plan: state.currentPlan);
                         final taskPanel = _TaskPanel(state: state);
 
                         return isWide
@@ -234,9 +252,10 @@ class _ConnectionButton extends StatelessWidget {
 }
 
 class _PlanPanel extends StatelessWidget {
-  const _PlanPanel({required this.state});
+  const _PlanPanel({required this.state, required this.plan});
 
   final AppState state;
+  final PracticePlan plan;
 
   @override
   Widget build(BuildContext context) {
@@ -249,11 +268,14 @@ class _PlanPanel extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text('Practice Plan',
+                  child: Text(
+                      state.selectedPlanIndex == 0
+                          ? 'Daily Session'
+                          : 'Per-Key Extras',
                       style: Theme.of(context).textTheme.headlineSmall),
                 ),
                 Text(
-                  '${state.plan.sections.fold<int>(0, (sum, section) => sum + section.tasks.length)} tasks',
+                  '${plan.sections.fold<int>(0, (sum, section) => sum + section.tasks.length)} tasks',
                   style: Theme.of(context)
                       .textTheme
                       .labelMedium
@@ -265,7 +287,7 @@ class _PlanPanel extends StatelessWidget {
             Expanded(
               child: ListView(
                 children: [
-                  for (final section in state.plan.sections) ...[
+                  for (final section in plan.sections) ...[
                     _SectionHeader(section.title, section.tasks.length),
                     for (final task in section.tasks)
                       _TaskTile(
