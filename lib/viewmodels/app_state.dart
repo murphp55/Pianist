@@ -163,7 +163,7 @@ class AppState extends ChangeNotifier {
   void simulateNote() {
     if (_selectedTask.expectedNotes.isEmpty) return;
     final expected = _selectedTask.expectedNotes[_evaluator.expectedIndex
-        .clamp(0, _selectedTask.expectedNotes.length - 1) as int];
+        .clamp(0, _selectedTask.expectedNotes.length - 1)];
     final shouldHit = _random.nextBool();
     final midiNote = shouldHit ? expected.midiNote : expected.midiNote + 1;
     _midiFactory.service.simulateNote(midiNote);
@@ -323,7 +323,6 @@ class AppState extends ChangeNotifier {
   static PracticePlan _buildExtrasPlan() {
     const keyName = 'C Major';
     const rightHandRoot = 60; // C4
-    const leftHandRoot = 48; // C3
     final keySlug = keyName.toLowerCase().replaceAll(' ', '-');
 
     final scaleSteps = _majorScaleTwoOctaves();

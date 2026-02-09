@@ -429,8 +429,8 @@ class _TaskPanel extends StatelessWidget {
     final task = state.selectedTask;
     final totalNotes = task.expectedNotes.length;
     final progress = totalNotes == 0 ? 0.0 : state.expectedIndex / totalNotes;
-    final step = (state.expectedIndex + 1)
-        .clamp(1, totalNotes == 0 ? 1 : totalNotes) as int;
+    final step =
+        (state.expectedIndex + 1).clamp(1, totalNotes == 0 ? 1 : totalNotes);
 
     return Card(
       child: Padding(
@@ -504,7 +504,7 @@ class _TaskPanel extends StatelessWidget {
                       highlightIndex: task.expectedNotes.isEmpty
                           ? 0
                           : state.expectedIndex
-                              .clamp(0, task.expectedNotes.length - 1) as int,
+                              .clamp(0, task.expectedNotes.length - 1),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -700,12 +700,10 @@ class _InfoChip extends StatelessWidget {
   const _InfoChip({
     required this.label,
     required this.value,
-    this.accent,
   });
 
   final String label;
   final String value;
-  final Color? accent;
 
   @override
   Widget build(BuildContext context) {
@@ -727,7 +725,7 @@ class _InfoChip extends StatelessWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: accent ?? const Color(0xFF1B1B1B),
+                  color: const Color(0xFF1B1B1B),
                 ),
           ),
         ],

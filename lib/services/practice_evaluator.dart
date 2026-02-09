@@ -61,7 +61,7 @@ class PracticeEvaluator {
       );
     }
 
-    final index = _expectedIndex.clamp(0, total - 1) as int;
+    final index = _expectedIndex.clamp(0, total - 1);
     final expectedNote = task.expectedNotes[index];
     final expectedName = NoteNameHelper.toName(expectedNote.midiNote);
     final playedName = NoteNameHelper.toName(event.midiNote);
@@ -69,7 +69,7 @@ class PracticeEvaluator {
     final isCorrect = expectedNote.midiNote == event.midiNote;
     if (isCorrect) {
       _correctCount += 1;
-      _expectedIndex = (_expectedIndex + 1).clamp(0, total) as int;
+      _expectedIndex = (_expectedIndex + 1).clamp(0, total);
     }
 
     if (task.metronomeRequired && _lastNoteTime != null) {
@@ -81,8 +81,8 @@ class PracticeEvaluator {
       if (!within) {
         // If timing is off, do not advance the index on incorrect timing.
         if (isCorrect) {
-          _expectedIndex = (_expectedIndex - 1).clamp(0, total) as int;
-          _correctCount = (_correctCount - 1).clamp(0, total) as int;
+          _expectedIndex = (_expectedIndex - 1).clamp(0, total);
+          _correctCount = (_correctCount - 1).clamp(0, total);
         }
       }
     }
