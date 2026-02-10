@@ -1050,6 +1050,7 @@ class _DiagramFocusedPanel extends StatelessWidget {
                             ? 0
                             : state.expectedIndex
                                 .clamp(0, task.expectedNotes.length - 1),
+                        keySignature: state.selectedKey,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -1336,6 +1337,7 @@ class _TaskPanel extends StatelessWidget {
                           ? 0
                           : state.expectedIndex
                               .clamp(0, task.expectedNotes.length - 1),
+                      keySignature: state.selectedKey,
                     ),
                   ),
                   const SizedBox(height: 8),

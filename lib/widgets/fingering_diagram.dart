@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../helpers/note_name_helper.dart';
+import '../models/key_signature.dart';
 import '../models/fingered_note.dart';
 
 class FingeringDiagram extends StatelessWidget {
@@ -8,10 +9,12 @@ class FingeringDiagram extends StatelessWidget {
     super.key,
     required this.notes,
     required this.highlightIndex,
+    required this.keySignature,
   });
 
   final List<FingeredNote> notes;
   final int highlightIndex;
+  final KeySignature keySignature;
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +22,7 @@ class FingeringDiagram extends StatelessWidget {
       painter: _FingeringPainter(
         notes: notes,
         highlightIndex: highlightIndex,
+        keySignature: keySignature,
         textStyle: Theme.of(context).textTheme.labelMedium ?? const TextStyle(),
       ),
       size: const Size(double.infinity, 280), // Increased from 180
@@ -30,18 +34,60 @@ class _FingeringPainter extends CustomPainter {
   _FingeringPainter({
     required this.notes,
     required this.highlightIndex,
+    required this.keySignature,
     required this.textStyle,
   });
 
   final List<FingeredNote> notes;
   final int highlightIndex;
+  final KeySignature keySignature;
   final TextStyle textStyle;
 
   @override
   void paint(Canvas canvas, Size size) {
-    const whiteKeyCount = 14;
+    // Only display first octave (8 notes) for cleaner diagram.
+    // If possible, keep the highlighted note visible.
+    const maxDisplayNotes = 8;
+    List<FingeredNote> displayNotes;
+    int localHighlightIndex = -1;
+    if (notes.isNotEmpty && notes.length > maxDisplayNotes) {
+      var start = 0;
+      if (highlightIndex >= 0 && highlightIndex < notes.length) {
+        start = highlightIndex - (maxDisplayNotes ~/ 2);
+        if (start < 0) start = 0;
+        if (start > notes.length - maxDisplayNotes) {
+          start = notes.length - maxDisplayNotes;
+        }
+        localHighlightIndex = highlightIndex - start;
+      }
+      displayNotes = notes.sublist(start, start + maxDisplayNotes);
+    } else {
+      displayNotes = notes;
+      if (highlightIndex >= 0 && highlightIndex < displayNotes.length) {
+        localHighlightIndex = highlightIndex;
+      }
+    }
+
+    const int whiteKeyCount = 14; // Keep consistent key count across images
+    int baseMidi = 55; // Default: G3 (C4 - 5 semitones)
+
+    if (displayNotes.isNotEmpty) {
+      final minMidi = displayNotes
+          .map((n) => n.midiNote)
+          .reduce((a, b) => a < b ? a : b);
+      final maxMidi = displayNotes
+          .map((n) => n.midiNote)
+          .reduce((a, b) => a > b ? a : b);
+      final centerMidi = ((minMidi + maxMidi) / 2).round();
+      final targetWhiteMidi = _previousWhiteKeyMidi(centerMidi);
+
+      // Center the scale within the fixed key count.
+      final centerIndex = whiteKeyCount ~/ 2;
+      baseMidi = _shiftByWhiteKeys(targetWhiteMidi, -centerIndex);
+    }
+
     final keyWidth = size.width / whiteKeyCount;
-    final keyHeight = size.height * 0.85; // Increased from 0.55 to use more height
+    final keyHeight = size.height * 0.85;
     final blackKeyHeight = keyHeight * 0.65;
 
     final whitePaint = Paint()..color = const Color(0xFFF6F1E8);
@@ -51,6 +97,7 @@ class _FingeringPainter extends CustomPainter {
       ..strokeWidth = 1;
     final blackPaint = Paint()..color = const Color(0xFF2B2A2A);
 
+    // Draw white keys
     for (int i = 0; i < whiteKeyCount; i++) {
       final rect = Rect.fromLTWH(i * keyWidth, size.height - keyHeight,
           keyWidth, keyHeight);
@@ -58,10 +105,16 @@ class _FingeringPainter extends CustomPainter {
       canvas.drawRect(rect, borderPaint);
     }
 
-    const blackKeyPattern = [1, 1, 0, 1, 1, 1, 0];
+    // Draw black keys - check each white key's note to determine if it has a black key after it
     for (int i = 0; i < whiteKeyCount; i++) {
-      final patternIndex = i % 7;
-      if (blackKeyPattern[patternIndex] == 1) {
+      final whiteKeyMidi = _whiteKeyMidiFromIndex(baseMidi, i);
+      final noteInOctave = whiteKeyMidi % 12;
+
+      // Check if this white key has a black key after it
+      // C(0), D(2), F(5), G(7), A(9) have sharps; E(4), B(11) don't
+      final hasBlackKey = [0, 2, 5, 7, 9].contains(noteInOctave);
+
+      if (hasBlackKey) {
         final rect = Rect.fromLTWH(
           (i + 0.7) * keyWidth,
           size.height - keyHeight,
@@ -75,14 +128,17 @@ class _FingeringPainter extends CustomPainter {
       }
     }
 
-    if (notes.isEmpty) return;
-
     final notePaint = Paint()..color = const Color(0xFFDE6B35);
     final activePaint = Paint()..color = const Color(0xFF1F6E54);
 
-    for (int i = 0; i < notes.length; i++) {
-      final note = notes[i];
-      final cx = _noteCenterX(note.midiNote, keyWidth);
+    for (int i = 0; i < displayNotes.length; i++) {
+      final note = displayNotes[i];
+      final cx = _noteCenterX(
+        note.midiNote,
+        keyWidth,
+        baseMidi,
+        whiteKeyCount,
+      );
       final isBlackKey = _isBlackKey(note.midiNote);
 
       // Place numbers ON the keys: lower for white keys, higher for black keys
@@ -93,11 +149,12 @@ class _FingeringPainter extends CustomPainter {
       canvas.drawCircle(
         Offset(cx, cy),
         16, // Slightly larger circles
-        i == highlightIndex ? activePaint : notePaint,
+        i == localHighlightIndex ? activePaint : notePaint,
       );
 
       // Show finger number and note name
-      final label = '${note.finger}\n${NoteNameHelper.toName(note.midiNote)}';
+      final label =
+          '${note.finger}\n${NoteNameHelper.toName(note.midiNote, keySignature: keySignature)}';
       final tp = TextPainter(
         text: TextSpan(
           text: label,
@@ -115,8 +172,53 @@ class _FingeringPainter extends CustomPainter {
   }
 
   bool _isBlackKey(int midiNote) {
-    final semitone = (midiNote - 60) % 12;
+    final semitone = midiNote % 12;
     return [1, 3, 6, 8, 10].contains(semitone);
+  }
+
+  int _nextWhiteKeyMidi(int midiNote) {
+    int currentMidi = midiNote;
+    while (_isBlackKey(currentMidi)) {
+      currentMidi++;
+    }
+    return currentMidi;
+  }
+
+  int _previousWhiteKeyMidi(int midiNote) {
+    int currentMidi = midiNote;
+    while (_isBlackKey(currentMidi)) {
+      currentMidi--;
+    }
+    return currentMidi;
+  }
+
+  int _shiftByWhiteKeys(int midiNote, int whiteSteps) {
+    int currentMidi = midiNote;
+    int remaining = whiteSteps;
+    final direction = whiteSteps >= 0 ? 1 : -1;
+
+    while (remaining != 0) {
+      currentMidi += direction;
+      if (!_isBlackKey(currentMidi)) {
+        remaining -= direction;
+      }
+    }
+    return currentMidi;
+  }
+
+  // Helper to calculate which MIDI note corresponds to a white key index
+  int _whiteKeyMidiFromIndex(int baseMidi, int index) {
+    // Start from baseMidi and count white keys
+    int currentMidi = baseMidi;
+    int whiteKeysFound = 0;
+
+    while (whiteKeysFound < index) {
+      currentMidi++;
+      if (!_isBlackKey(currentMidi)) {
+        whiteKeysFound++;
+      }
+    }
+    return currentMidi;
   }
 
   @override
@@ -125,57 +227,43 @@ class _FingeringPainter extends CustomPainter {
         oldDelegate.highlightIndex != highlightIndex;
   }
 
-  double _noteCenterX(int midiNote, double keyWidth) {
-    const baseMidi = 60; // C4
-    const maxWhiteKeys = 14;
-    final semitone = (midiNote - baseMidi).clamp(0, 23);
-    final octave = semitone ~/ 12;
-    final semitoneInOctave = semitone % 12;
+  double _noteCenterX(
+    int midiNote,
+    double keyWidth,
+    int baseMidi,
+    int whiteKeyCount,
+  ) {
+    final whiteKeyIndex =
+        _whiteKeyIndexAtOrBefore(baseMidi, midiNote, whiteKeyCount);
 
-    double offset;
-    switch (semitoneInOctave) {
-      case 0:
-        offset = 0;
-        break;
-      case 1:
-        offset = 0.5;
-        break;
-      case 2:
-        offset = 1;
-        break;
-      case 3:
-        offset = 1.5;
-        break;
-      case 4:
-        offset = 2;
-        break;
-      case 5:
-        offset = 3;
-        break;
-      case 6:
-        offset = 3.5;
-        break;
-      case 7:
-        offset = 4;
-        break;
-      case 8:
-        offset = 4.5;
-        break;
-      case 9:
-        offset = 5;
-        break;
-      case 10:
-        offset = 5.5;
-        break;
-      case 11:
-        offset = 6;
-        break;
-      default:
-        offset = 0;
+    if (_isBlackKey(midiNote)) {
+      // Black key: centered between its surrounding white keys.
+      final index = (whiteKeyIndex + 1.0).clamp(0.0, whiteKeyCount - 1.0);
+      return index * keyWidth;
     }
 
-    final whiteIndex = (octave * 7) + offset;
-    final clampedIndex = whiteIndex.clamp(0, maxWhiteKeys - 1) as double;
-    return (clampedIndex + 0.5) * keyWidth;
+    // White key: centered within its key.
+    final index = (whiteKeyIndex + 0.5).clamp(0.0, whiteKeyCount - 1.0);
+    return index * keyWidth;
+  }
+
+  int _whiteKeyIndexAtOrBefore(
+    int baseMidi,
+    int midiNote,
+    int whiteKeyCount,
+  ) {
+    int whiteIndex = 0;
+    for (int midi = baseMidi; midi <= midiNote; midi++) {
+      if (!_isBlackKey(midi)) {
+        whiteIndex++;
+      }
+    }
+    // Convert count to zero-based index.
+    whiteIndex -= 1;
+    if (whiteIndex < 0) whiteIndex = 0;
+    if (whiteIndex > whiteKeyCount - 1) {
+      whiteIndex = whiteKeyCount - 1;
+    }
+    return whiteIndex;
   }
 }

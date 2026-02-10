@@ -6,6 +6,8 @@ class KeySignature {
     required this.scalePattern,
     required this.rightHandFingering,
     required this.leftHandFingering,
+    required this.preferFlats,
+    required this.scaleNoteNames,
   });
 
   final String name;
@@ -13,6 +15,8 @@ class KeySignature {
   final List<int> scalePattern; // Semitone intervals from tonic
   final List<int> rightHandFingering; // Fingering for 2 octaves ascending
   final List<int> leftHandFingering; // Fingering for 2 octaves descending
+  final bool preferFlats;
+  final List<String> scaleNoteNames;
 
   /// All available major key signatures
   static const List<KeySignature> allMajorKeys = [
@@ -40,6 +44,8 @@ class KeySignature {
     scalePattern: majorScalePattern,
     rightHandFingering: [1, 2, 3, 1, 2, 3, 4, 5, 1, 2, 3, 1, 2, 3, 4, 5],
     leftHandFingering: [5, 4, 3, 2, 1, 3, 2, 1, 5, 4, 3, 2, 1, 3, 2, 1],
+    preferFlats: false,
+    scaleNoteNames: ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
   );
 
   // G Major
@@ -49,6 +55,8 @@ class KeySignature {
     scalePattern: majorScalePattern,
     rightHandFingering: [1, 2, 3, 1, 2, 3, 4, 5, 1, 2, 3, 1, 2, 3, 4, 5],
     leftHandFingering: [5, 4, 3, 2, 1, 3, 2, 1, 5, 4, 3, 2, 1, 3, 2, 1],
+    preferFlats: false,
+    scaleNoteNames: ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
   );
 
   // D Major
@@ -58,6 +66,8 @@ class KeySignature {
     scalePattern: majorScalePattern,
     rightHandFingering: [1, 2, 3, 1, 2, 3, 4, 5, 1, 2, 3, 1, 2, 3, 4, 5],
     leftHandFingering: [5, 4, 3, 2, 1, 3, 2, 1, 5, 4, 3, 2, 1, 3, 2, 1],
+    preferFlats: false,
+    scaleNoteNames: ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
   );
 
   // A Major
@@ -67,6 +77,8 @@ class KeySignature {
     scalePattern: majorScalePattern,
     rightHandFingering: [1, 2, 3, 1, 2, 3, 4, 5, 1, 2, 3, 1, 2, 3, 4, 5],
     leftHandFingering: [5, 4, 3, 2, 1, 3, 2, 1, 5, 4, 3, 2, 1, 3, 2, 1],
+    preferFlats: false,
+    scaleNoteNames: ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
   );
 
   // E Major
@@ -76,6 +88,8 @@ class KeySignature {
     scalePattern: majorScalePattern,
     rightHandFingering: [1, 2, 3, 1, 2, 3, 4, 5, 1, 2, 3, 1, 2, 3, 4, 5],
     leftHandFingering: [5, 4, 3, 2, 1, 3, 2, 1, 5, 4, 3, 2, 1, 3, 2, 1],
+    preferFlats: false,
+    scaleNoteNames: ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
   );
 
   // B Major
@@ -85,6 +99,8 @@ class KeySignature {
     scalePattern: majorScalePattern,
     rightHandFingering: [1, 2, 3, 1, 2, 3, 4, 5, 1, 2, 3, 1, 2, 3, 4, 5],
     leftHandFingering: [4, 3, 2, 1, 4, 3, 2, 1, 4, 3, 2, 1, 3, 2, 1, 2],
+    preferFlats: false,
+    scaleNoteNames: ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'],
   );
 
   // F# Major
@@ -94,6 +110,8 @@ class KeySignature {
     scalePattern: majorScalePattern,
     rightHandFingering: [2, 3, 4, 1, 2, 3, 1, 2, 3, 4, 1, 2, 3, 1, 2, 3],
     leftHandFingering: [4, 3, 2, 1, 3, 2, 1, 2, 3, 2, 1, 4, 3, 2, 1, 2],
+    preferFlats: false,
+    scaleNoteNames: ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'E#'],
   );
 
   // Db Major
@@ -103,6 +121,8 @@ class KeySignature {
     scalePattern: majorScalePattern,
     rightHandFingering: [2, 3, 1, 2, 3, 4, 1, 2, 3, 1, 2, 3, 4, 1, 2, 3],
     leftHandFingering: [3, 2, 1, 4, 3, 2, 1, 2, 3, 2, 1, 4, 3, 2, 1, 2],
+    preferFlats: true,
+    scaleNoteNames: ['Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C'],
   );
 
   // Ab Major
@@ -112,6 +132,8 @@ class KeySignature {
     scalePattern: majorScalePattern,
     rightHandFingering: [2, 3, 1, 2, 3, 4, 1, 2, 3, 1, 2, 3, 4, 1, 2, 3],
     leftHandFingering: [3, 2, 1, 4, 3, 2, 1, 2, 3, 2, 1, 4, 3, 2, 1, 2],
+    preferFlats: true,
+    scaleNoteNames: ['Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'],
   );
 
   // Eb Major
@@ -121,6 +143,8 @@ class KeySignature {
     scalePattern: majorScalePattern,
     rightHandFingering: [3, 1, 2, 3, 4, 1, 2, 3, 1, 2, 3, 4, 1, 2, 3, 4],
     leftHandFingering: [3, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 3, 2, 1],
+    preferFlats: true,
+    scaleNoteNames: ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
   );
 
   // Bb Major
@@ -130,6 +154,8 @@ class KeySignature {
     scalePattern: majorScalePattern,
     rightHandFingering: [4, 1, 2, 3, 1, 2, 3, 4, 1, 2, 3, 1, 2, 3, 4, 5],
     leftHandFingering: [3, 2, 1, 4, 3, 2, 1, 2, 1, 3, 2, 1, 4, 3, 2, 1],
+    preferFlats: true,
+    scaleNoteNames: ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
   );
 
   // F Major
@@ -139,6 +165,8 @@ class KeySignature {
     scalePattern: majorScalePattern,
     rightHandFingering: [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4],
     leftHandFingering: [5, 4, 3, 2, 1, 3, 2, 1, 5, 4, 3, 2, 1, 3, 2, 1],
+    preferFlats: true,
+    scaleNoteNames: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
   );
 
   /// Generate MIDI notes for the scale based on this key signature

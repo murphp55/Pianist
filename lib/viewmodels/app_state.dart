@@ -22,7 +22,10 @@ class AppState extends ChangeNotifier {
         _extrasPlan = PlanFactory.buildExtrasPlan(key: KeySignature.cMajor),
         _progressStore = ProgressStore() {
     _selectedTask = _dailyPlan.sections.first.tasks.first;
-    _evaluator = PracticeEvaluator(_selectedTask);
+    _evaluator = PracticeEvaluator(
+      _selectedTask,
+      keySignature: _selectedKey,
+    );
     _init();
   }
 
@@ -53,7 +56,7 @@ class AppState extends ChangeNotifier {
         expectedNotes: [],
         metronomeRequired: false,
         tempoBpm: 80,
-      ));
+      ), keySignature: KeySignature.cMajor);
 
   String _lastNote = '-';
   String _expectedNote = '-';
@@ -134,7 +137,10 @@ class AppState extends ChangeNotifier {
 
   void selectTask(PracticeTask task) {
     _selectedTask = task;
-    _evaluator = PracticeEvaluator(task);
+    _evaluator = PracticeEvaluator(
+      task,
+      keySignature: _selectedKey,
+    );
     _resetFeedback();
     notifyListeners();
   }
@@ -154,7 +160,10 @@ class AppState extends ChangeNotifier {
         metronomeRequired: false,
         tempoBpm: 80,
       );
-      _evaluator = PracticeEvaluator(_selectedTask);
+      _evaluator = PracticeEvaluator(
+        _selectedTask,
+        keySignature: _selectedKey,
+      );
       _resetFeedback();
       notifyListeners();
     }
@@ -254,7 +263,10 @@ class AppState extends ChangeNotifier {
   void _resetFeedback() {
     _lastNote = '-';
     _expectedNote = _selectedTask.expectedNotes.isNotEmpty
-        ? NoteNameHelper.toName(_selectedTask.expectedNotes.first.midiNote)
+        ? NoteNameHelper.toName(
+            _selectedTask.expectedNotes.first.midiNote,
+            keySignature: _selectedKey,
+          )
         : '-';
     _lastWasCorrect = false;
   }

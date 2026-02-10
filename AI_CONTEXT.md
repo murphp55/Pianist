@@ -1,11 +1,11 @@
 # Pianist - AI Context & Project Overview
 
 > **Purpose:** This file provides comprehensive context for AI assistants working on the Pianist project.
-> **Last Updated:** 2026-02-09
+> **Last Updated:** 2026-02-10
 
 ## Project Summary
 
-Pianist is a Flutter-based piano practice companion that connects to MIDI keyboards, provides structured practice plans, evaluates note accuracy with optional metronome timing, and tracks progress. The app guides users through daily practice sessions with real-time feedback.
+Pianist is a Flutter-based piano practice companion that connects to MIDI keyboards, provides structured practice plans per key signature, evaluates note accuracy with optional metronome timing, and tracks progress. The app guides users through daily practice sessions with real-time feedback and fingering diagrams.
 
 ## Technology Stack
 
@@ -28,7 +28,8 @@ Pianist is a Flutter-based piano practice companion that connects to MIDI keyboa
 
 ### State Management
 - **Provider pattern** with single `AppState` class
-- Centralized state in `lib/viewmodels/app_state.dart` (217 lines after refactoring)
+- Centralized state in `lib/viewmodels/app_state.dart` (241 lines)
+- App state tracks selected key signature and rebuilds practice plans when the key changes
 - Proper lifecycle management with dispose() methods to prevent memory leaks
 
 ### Key Services (lib/services/)
@@ -40,7 +41,7 @@ Pianist is a Flutter-based piano practice companion that connects to MIDI keyboa
   - `MidiServiceFactory` - Creates platform or mock service
   - `PlatformMidiService` - Real MIDI via method channels
   - `MockMidiService` - Simulated devices for development
-- **Key Methods:** `getDevices()`, `connect()`, `disconnect()`, `noteStream`
+- **Key Methods:** `listDevices()`, `connect()`, `disconnect()`, `noteStream`
 - **Error Handling:** Comprehensive logging with PlatformException handling
 
 #### `metronome_service.dart`
@@ -57,17 +58,17 @@ Pianist is a Flutter-based piano practice companion that connects to MIDI keyboa
 
 #### `progress_store.dart`
 - **Purpose:** Persist practice progress to local JSON file
-- **Location:** `progress.json` in app documents directory
+- **Location:** `progress.json` in app support directory
 - **Error Handling:** Specific exception handling for FileSystemException and FormatException
 - **Returns:** bool from save() to indicate success/failure
 
-#### `plan_factory.dart` (NEW - Refactored from AppState)
-- **Purpose:** Build structured practice plans
-- **Size:** 353 lines extracted from AppState
+#### `plan_factory.dart` (Refactored from AppState)
+- **Purpose:** Build structured practice plans per key signature
+- **Size:** 393 lines
 - **Methods:**
-  - `buildDailyPlan()` - Main practice session
-  - `buildExtrasPlan()` - Per-key supplementary exercises
-- **Contains:** All practice plan building logic including scales, arpeggios, chord progressions
+  - `buildDailyPlan({key})` - Main practice session by key
+  - `buildExtrasPlan({key})` - Per-key supplementary exercises
+- **Contains:** All practice plan building logic including scales, arpeggios, chord progressions, and fingerings
 
 #### `practice_evaluator.dart`
 - **Purpose:** Evaluate played notes against expected sequence
@@ -76,6 +77,7 @@ Pianist is a Flutter-based piano practice companion that connects to MIDI keyboa
   - Metronome timing tolerance (±20%)
   - Progress tracking with "needs work" detection
   - Timing penalty logic (reverts progress on poor timing)
+  - Note name rendering uses key signature via `NoteNameHelper`
 
 #### `app_logger.dart` (NEW)
 - **Purpose:** Centralized structured logging
@@ -85,94 +87,63 @@ Pianist is a Flutter-based piano practice companion that connects to MIDI keyboa
 
 ### Models (lib/models/)
 - **practice_task.dart** - Task/section definitions with metadata (tempo, metronome requirement)
+- **practice_plan.dart** - Practice plan wrapper with section lookup
 - **practice_result.dart** - Evaluation results and verdicts (pass, completed, needsWork)
+- **task_progress.dart** - Progress map for practice results
 - **fingered_note.dart** - MIDI note with fingering information
+- **key_signature.dart** - Major key definitions, scale patterns, and fingerings
+
+### Helpers (lib/helpers/)
+- **note_name_helper.dart** - Note name rendering with sharps/flats and key signature support
 
 ### Widgets (lib/widgets/)
-- **fingering_diagram.dart** - Custom painter for piano keyboard visualization
+- **fingering_diagram.dart** - Custom painter for piano keyboard visualization with note names
 - **metronome_indicator.dart** (NEW) - Visual 4-beat indicator with pulsing animations
 
 ### UI Structure (lib/main.dart)
 
 **Main Components:**
-- `AppShell` - Root scaffold with responsive layout
-- `_ConnectionStrip` - MIDI device selection and connection
-- `_PlanPanel` - Practice plan task list with sections
-- `_TaskPanel` - Active task details and controls
+- `AppShell` - Root scaffold with responsive layout and app bar status
+- `_MidiDialog` - MIDI device selection and connection dialog
+- `_SimplifiedPlanPanel` - Practice plan list with key selector
+- `_DiagramFocusedPanel` - Large fingering diagram and compact feedback
 - `_TaskTile` - Individual task with difficulty stars and status badge
-- `_ProgressPanel` - Animated progress visualization
-- `_FeedbackPanel` - Real-time note feedback (expected vs played)
+- `_CompactFeedbackPanel` - Compact expected vs played note tiles
 - `_HelpPanel` - Practice tips and keyboard shortcuts (expandable)
 - `_DebugPanel` - Development tools (simulate notes)
 
 **Responsive Breakpoints:**
-- Large (>980px): Side-by-side 3:5 ratio
-- Medium (600-980px): Side-by-side 2:3 ratio
-- Small (<600px): Stacked vertical layout
+- Wide (>800px): Side-by-side 2:5 ratio (plan list + diagram focus)
+- Narrow (≤800px): Stacked vertical layout
 
-## Recent Major Changes (2026-02-09)
+## Recent Major Changes (2026-02-10)
 
-### Fixed 4 High-Priority Issues:
+### Key Updates:
 
-1. **Memory Leak Fix**
-   - Added dispose() to AppState, MidiServiceFactory, MockMidiService
-   - Properly cancel StreamSubscriptions (_noteSubscription, _beatSubscription)
-   - Dispose metronome and MIDI services
+1. **Multi-Key Major Support**
+   - Added `KeySignature` model with 12 major keys and fingerings
+   - Practice plans are generated per selected key
+   - Note naming honors key signature (sharps/flats)
 
-2. **Metronome Implementation**
-   - Created MetronomeService with audio + visual support
-   - Visual-only mode when audio unavailable
-   - Integrated with practice evaluator for timing validation
-   - Created MetronomeIndicator widget for beat display
+2. **Key Selection UI**
+   - Key selector dropdown added to the plan panel
+   - Plans rebuild when key changes
+   - Fingering diagram displays key-accurate note names
 
-3. **Error Handling**
-   - Created AppLogger for structured logging
-   - Added try-catch blocks throughout file I/O
-   - Added PlatformException handling in MIDI service
-   - Graceful degradation for missing features
-
-4. **Architecture Refactoring**
-   - Extracted PlanFactory (353 lines) from AppState
-   - Reduced AppState from 571 to 217 lines (62% reduction)
-   - Better separation of concerns (SRP compliance)
-
-### UI Enhancements (19+ Improvements):
-
-**High-Impact Features:**
-- Task difficulty indicators (1-3 stars based on tempo/note count)
-- Empty state guidance when no MIDI devices found
-- Comprehensive tooltips on all interactive elements
-- Enhanced action buttons with disabled states
-- Task status badges with icons (Pass, Done, Review, New)
-
-**Visual Design:**
-- Animated progress bar with smooth transitions
-- Icons throughout panels and feedback tiles
-- Animated connection status with glow effect
-- Enhanced metronome card with tempo badge
-- Card elevation (2dp) for visual depth
-- Visual section dividers with icons
-
-**Accessibility:**
-- Semantic labels for screen readers
-- Color + icon feedback (not just color)
-- Keyboard-friendly navigation
-
-**User Guidance:**
-- Expandable help panel with practice tips
-- Keyboard shortcuts reference
-- Getting started instructions
-- Metronome timing guidance
+3. **UI Layout Refresh**
+   - New diagram-focused panel with larger fingering view
+   - MIDI settings moved into a modal dialog
+   - Compact feedback tiles for expected/played notes
 
 ## Known Issues & Limitations
 
 ### Platform-Specific:
 - **Windows:** just_audio plugin may not work without additional setup (app runs in visual-only mode)
 - **Fire Tablets:** Requires sideloading (no Google Play Services)
-- **MIDI:** Currently using mock devices; platform implementation pending
+- **MIDI:** Platform channels exist; app falls back to mock devices when plugins/devices aren't available
 
 ### Feature Gaps:
-- Only supports C Major (multi-key support planned)
+- Only supports major keys (no minor keys yet)
 - No practice session history/analytics
 - No undo/redo functionality
 - No export functionality for progress data
@@ -208,7 +179,7 @@ Pianist is a Flutter-based piano practice companion that connects to MIDI keyboa
 - Graceful degradation for missing features
 
 ### UI Development:
-- Responsive design (consider all 3 breakpoints)
+- Responsive design (wide vs narrow breakpoint)
 - Add tooltips to interactive elements
 - Include semantic labels for accessibility
 - Use consistent spacing (8px increments)
@@ -224,10 +195,13 @@ Pianist is a Flutter-based piano practice companion that connects to MIDI keyboa
 
 ```
 lib/
-├── main.dart                    # App shell and UI (760+ lines)
+├── main.dart                    # App shell and UI (1800+ lines)
 ├── models/
 │   ├── fingered_note.dart
+│   ├── key_signature.dart
+│   ├── practice_plan.dart
 │   ├── practice_result.dart
+│   ├── task_progress.dart
 │   └── practice_task.dart
 ├── services/
 │   ├── app_logger.dart          # NEW: Structured logging
@@ -237,9 +211,9 @@ lib/
 │   ├── practice_evaluator.dart  # Note validation
 │   └── progress_store.dart      # JSON persistence
 ├── viewmodels/
-│   └── app_state.dart           # Central state (217 lines)
+│   └── app_state.dart           # Central state (241 lines)
 ├── helpers/
-│   └── note_names.dart
+│   └── note_name_helper.dart
 └── widgets/
     ├── fingering_diagram.dart
     └── metronome_indicator.dart  # NEW: Visual beat display
@@ -253,12 +227,10 @@ pubspec.yaml                     # Dependencies and config
 
 ## Practice Plan Structure
 
-### Daily Plan:
-1. **Warm-up** - Chromatic scales, basic arpeggios
-2. **Scales** - C Major 1-2 octaves with metronome
-3. **Arpeggios** - C Major patterns
-4. **Chords** - Triads and progressions
-5. **Technique** - Finger independence exercises
+### Daily Plan (Per Selected Key):
+1. **Scales** - 2-octave scales by key
+2. **Arpeggios** - 2-octave arpeggios by key
+3. **Chord Inversions** - I chord inversions by key
 
 ### Per-Key Extras:
 - Additional exercises for each key
@@ -289,9 +261,8 @@ pubspec.yaml                     # Dependencies and config
 - **Production:** Platform channels ready, native plugins pending
 
 ### Mock Devices:
-- "Mock Piano A" (default)
-- "Mock Piano B"
-- "Mock Synth"
+- "Mock MIDI Keyboard"
+- "Bluetooth Piano (Mock)"
 - Simulate button sends C4 (MIDI 60)
 
 ### Real MIDI (When Implemented):
@@ -302,7 +273,7 @@ pubspec.yaml                     # Dependencies and config
 ## Progress Tracking
 
 ### Storage:
-- **Location:** `progress.json` in app documents directory
+- **Location:** `progress.json` in app support directory
 - **Format:** JSON map of task ID → PracticeResult
 - **Persistence:** Auto-save after each task completion
 
@@ -366,7 +337,7 @@ git push
 - Add practice session history
 
 ### Medium Priority:
-- Multi-key support (beyond C Major)
+- Minor key support
 - Export progress data
 - Session timer
 - Undo/redo functionality
@@ -386,7 +357,7 @@ git push
 - Run `flutter clean` then `flutter pub get`
 
 ### MIDI not working:
-- Currently expected (mock devices only)
+- Expected if the platform MIDI plugin isn't available or no devices are detected
 - Use "Simulate Note" button for testing
 
 ### Metronome has no audio:
@@ -409,7 +380,6 @@ git push
 
 **Note for AI Assistants:**
 - Always run `flutter analyze` before committing
-- Check memory.md in .claude/projects for additional context
 - Follow existing code patterns and naming conventions
 - Test on target platform before major changes
 - Document significant changes in commit messages

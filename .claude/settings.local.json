@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter pub get:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(flutter run:*)",
+      "Bash(timeout /t 15 /nobreak)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nImplement metronome, fix memory leaks, add error handling, and enhance UI\n\nCore Fixes:\n- Fix memory leak by adding dispose\\(\\) methods to AppState, MidiServiceFactory, and MockMidiService\n- Implement visual + audio metronome with just_audio \\(graceful degradation without audio\\)\n- Add comprehensive error handling with structured logging \\(logger package\\)\n- Refactor architecture: extract 353 lines from AppState into PlanFactory\n\nNew Services:\n- app_logger.dart: Centralized structured logging with debug/info/warning/error levels\n- metronome_service.dart: Audio playback + beat stream for practice tempo guidance\n- plan_factory.dart: Static factory methods for building practice plans \\(extracted from AppState\\)\n\nNew Widgets:\n- metronome_indicator.dart: Visual 4-beat indicator with pulsing circles\n\nUI Enhancements \\(19+ improvements\\):\n- Task difficulty indicators \\(1-3 stars based on tempo and note count\\)\n- Empty state for MIDI devices with helpful message\n- Tooltips on all interactive elements\n- Enhanced action buttons with disabled states\n- Task status badges with icons \\(Pass, Done, Review, New\\)\n- Animated progress bar with smooth transitions\n- Icons throughout panels and feedback tiles\n- Animated connection status with glow effect\n- Enhanced metronome display with tempo badge\n- Practice tips & shortcuts help panel \\(expandable\\)\n- Note count info chip\n- Responsive layout with 3-tier breakpoints \\(mobile/tablet/desktop\\)\n- Card elevation for visual depth\n- Visual section dividers with icons\n- Semantic labels for screen reader accessibility\n- Color + icon feedback for accessibility\n\nChanges:\n- AppState reduced from 571 to 217 lines \\(62% reduction\\)\n- main.dart expanded with new UI components and better organization\n- progress_store.dart: return bool from save\\(\\), specific exception handling\n- midi_service.dart: comprehensive logging, PlatformException handling\n- pubspec.yaml: add logger and just_audio dependencies \\(audio commented out until file added\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push)",
+      "Bash(git commit:*)",
+      "Bash(flutter devices:*)",
+      "Bash(ping:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}

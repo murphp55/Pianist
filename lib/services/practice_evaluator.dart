@@ -1,4 +1,5 @@
 import '../helpers/note_name_helper.dart';
+import '../models/key_signature.dart';
 import '../models/practice_task.dart';
 
 class NoteOnEvent {
@@ -32,9 +33,13 @@ class NoteFeedback {
 }
 
 class PracticeEvaluator {
-  PracticeEvaluator(this.task);
+  PracticeEvaluator(
+    this.task, {
+    required this.keySignature,
+  });
 
   PracticeTask task;
+  final KeySignature keySignature;
   int _expectedIndex = 0;
   int _correctCount = 0;
   DateTime? _lastNoteTime;
@@ -63,8 +68,14 @@ class PracticeEvaluator {
 
     final index = _expectedIndex.clamp(0, total - 1);
     final expectedNote = task.expectedNotes[index];
-    final expectedName = NoteNameHelper.toName(expectedNote.midiNote);
-    final playedName = NoteNameHelper.toName(event.midiNote);
+    final expectedName = NoteNameHelper.toName(
+      expectedNote.midiNote,
+      keySignature: keySignature,
+    );
+    final playedName = NoteNameHelper.toName(
+      event.midiNote,
+      keySignature: keySignature,
+    );
 
     final isCorrect = expectedNote.midiNote == event.midiNote;
     if (isCorrect) {
