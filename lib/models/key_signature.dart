@@ -45,7 +45,7 @@ class KeySignature {
   // G Major
   static const gMajor = KeySignature(
     name: 'G Major',
-    tonicMidi: 55, // G3
+    tonicMidi: 67, // G4
     scalePattern: majorScalePattern,
     rightHandFingering: [1, 2, 3, 1, 2, 3, 4, 5, 1, 2, 3, 1, 2, 3, 4, 5],
     leftHandFingering: [5, 4, 3, 2, 1, 3, 2, 1, 5, 4, 3, 2, 1, 3, 2, 1],
@@ -63,7 +63,7 @@ class KeySignature {
   // A Major
   static const aMajor = KeySignature(
     name: 'A Major',
-    tonicMidi: 57, // A3
+    tonicMidi: 69, // A4
     scalePattern: majorScalePattern,
     rightHandFingering: [1, 2, 3, 1, 2, 3, 4, 5, 1, 2, 3, 1, 2, 3, 4, 5],
     leftHandFingering: [5, 4, 3, 2, 1, 3, 2, 1, 5, 4, 3, 2, 1, 3, 2, 1],
@@ -81,7 +81,7 @@ class KeySignature {
   // B Major
   static const bMajor = KeySignature(
     name: 'B Major',
-    tonicMidi: 59, // B3
+    tonicMidi: 71, // B4
     scalePattern: majorScalePattern,
     rightHandFingering: [1, 2, 3, 1, 2, 3, 4, 5, 1, 2, 3, 1, 2, 3, 4, 5],
     leftHandFingering: [4, 3, 2, 1, 4, 3, 2, 1, 4, 3, 2, 1, 3, 2, 1, 2],
@@ -90,7 +90,7 @@ class KeySignature {
   // F# Major
   static const fSharpMajor = KeySignature(
     name: 'F# Major',
-    tonicMidi: 54, // F#3
+    tonicMidi: 66, // F#4
     scalePattern: majorScalePattern,
     rightHandFingering: [2, 3, 4, 1, 2, 3, 1, 2, 3, 4, 1, 2, 3, 1, 2, 3],
     leftHandFingering: [4, 3, 2, 1, 3, 2, 1, 2, 3, 2, 1, 4, 3, 2, 1, 2],
@@ -108,7 +108,7 @@ class KeySignature {
   // Ab Major
   static const aFlatMajor = KeySignature(
     name: 'Ab Major',
-    tonicMidi: 56, // Ab3
+    tonicMidi: 68, // Ab4
     scalePattern: majorScalePattern,
     rightHandFingering: [2, 3, 1, 2, 3, 4, 1, 2, 3, 1, 2, 3, 4, 1, 2, 3],
     leftHandFingering: [3, 2, 1, 4, 3, 2, 1, 2, 3, 2, 1, 4, 3, 2, 1, 2],
@@ -126,7 +126,7 @@ class KeySignature {
   // Bb Major
   static const bFlatMajor = KeySignature(
     name: 'Bb Major',
-    tonicMidi: 58, // Bb3
+    tonicMidi: 70, // Bb4
     scalePattern: majorScalePattern,
     rightHandFingering: [4, 1, 2, 3, 1, 2, 3, 4, 1, 2, 3, 1, 2, 3, 4, 5],
     leftHandFingering: [3, 2, 1, 4, 3, 2, 1, 2, 1, 3, 2, 1, 4, 3, 2, 1],
@@ -135,7 +135,7 @@ class KeySignature {
   // F Major
   static const fMajor = KeySignature(
     name: 'F Major',
-    tonicMidi: 53, // F3
+    tonicMidi: 65, // F4
     scalePattern: majorScalePattern,
     rightHandFingering: [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4],
     leftHandFingering: [5, 4, 3, 2, 1, 3, 2, 1, 5, 4, 3, 2, 1, 3, 2, 1],

@@ -128,30 +128,6 @@ class AppShell extends StatelessWidget {
                   );
                 },
               ),
-              // Key selector
-              PopupMenuButton<KeySignature>(
-                icon: const Icon(Icons.music_note),
-                tooltip: 'Select Key',
-                onSelected: (key) => state.setKey(key),
-                itemBuilder: (context) => KeySignature.allMajorKeys.map((key) {
-                  return PopupMenuItem<KeySignature>(
-                    value: key,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.check,
-                          size: 18,
-                          color: state.selectedKey == key
-                              ? const Color(0xFF1F6E54)
-                              : Colors.transparent,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(key.name),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
               // Plan selector
               PopupMenuButton<int>(
                 icon: const Icon(Icons.library_music),
@@ -522,6 +498,53 @@ class _SimplifiedPlanPanel extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Key selector dropdown
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF6F1E8),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFB2A89A)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.music_note, size: 18, color: Color(0xFF1F6E54)),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Key:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2F3B47),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: DropdownButton<KeySignature>(
+                      value: state.selectedKey,
+                      isExpanded: true,
+                      underline: const SizedBox(),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF1F6E54),
+                        fontWeight: FontWeight.bold,
+                      ),
+                      icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF1F6E54)),
+                      onChanged: (key) {
+                        if (key != null) state.setKey(key);
+                      },
+                      items: KeySignature.allMajorKeys.map((key) {
+                        return DropdownMenuItem<KeySignature>(
+                          value: key,
+                          child: Text(key.name),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
             Row(
               children: [
                 const Icon(Icons.list_alt, size: 20, color: Color(0xFF2F3B47)),
