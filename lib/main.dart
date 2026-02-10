@@ -80,7 +80,94 @@ class AppShell extends StatelessWidget {
       builder: (context, state, _) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Pianist Practice Lab'),
+            title: Row(
+              children: [
+                const Text('Pianist'),
+                const SizedBox(width: 16),
+                // Compact connection status indicator
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: state.isConnected
+                        ? const Color(0xFF1F6E54)
+                        : const Color(0xFFB2A89A),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        state.isConnected ? Icons.circle : Icons.circle_outlined,
+                        size: 10,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        state.isConnected ? 'MIDI Connected' : 'MIDI Offline',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              // MIDI connection menu button
+              IconButton(
+                icon: const Icon(Icons.settings_input_composite),
+                tooltip: 'MIDI Settings',
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => _MidiDialog(state: state),
+                  );
+                },
+              ),
+              // Plan selector
+              PopupMenuButton<int>(
+                icon: const Icon(Icons.library_music),
+                tooltip: 'Select Practice Plan',
+                onSelected: (index) => state.selectPlan(index),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 0,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.check,
+                          size: 18,
+                          color: state.selectedPlanIndex == 0
+                              ? const Color(0xFF1F6E54)
+                              : Colors.transparent,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('Daily Session'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 1,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.check,
+                          size: 18,
+                          color: state.selectedPlanIndex == 1
+                              ? const Color(0xFF1F6E54)
+                              : Colors.transparent,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('Per-Key Extras'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           body: Container(
             decoration: const BoxDecoration(
@@ -91,75 +178,142 @@ class AppShell extends StatelessWidget {
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  _ConnectionStrip(state: state),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      ChoiceChip(
-                        label: const Text('Daily Session'),
-                        selected: state.selectedPlanIndex == 0,
-                        onSelected: (_) => state.selectPlan(0),
-                      ),
-                      const SizedBox(width: 8),
-                      ChoiceChip(
-                        label: const Text('Per-Key Extras'),
-                        selected: state.selectedPlanIndex == 1,
-                        onSelected: (_) => state.selectPlan(1),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final width = constraints.maxWidth;
-                        // Responsive breakpoints: small (<600), medium (600-980), large (>980)
-                        final isLarge = width > 980;
-                        final isMedium = width > 600 && width <= 980;
-                        final planPanel =
-                            _PlanPanel(state: state, plan: state.currentPlan);
-                        final taskPanel = _TaskPanel(state: state);
+              padding: const EdgeInsets.all(16),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  final isWide = width > 800;
+                  final planPanel =
+                      _SimplifiedPlanPanel(state: state, plan: state.currentPlan);
+                  final diagramPanel = _DiagramFocusedPanel(state: state);
 
-                        if (isLarge) {
-                          // Desktop: side-by-side with optimal ratio
-                          return Row(
-                            children: [
-                              Expanded(flex: 3, child: planPanel),
-                              const SizedBox(width: 16),
-                              Expanded(flex: 5, child: taskPanel),
-                            ],
-                          );
-                        } else if (isMedium) {
-                          // Tablet: side-by-side with balanced ratio
-                          return Row(
-                            children: [
-                              Expanded(flex: 2, child: planPanel),
-                              const SizedBox(width: 12),
-                              Expanded(flex: 3, child: taskPanel),
-                            ],
-                          );
-                        } else {
-                          // Mobile: stacked layout
-                          return Column(
-                            children: [
-                              Expanded(child: planPanel),
-                              const SizedBox(height: 12),
-                              Expanded(child: taskPanel),
-                            ],
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                ],
+                  if (isWide) {
+                    // Wide layout: task list left, diagram/exercise right (prioritized)
+                    return Row(
+                      children: [
+                        Expanded(flex: 2, child: planPanel),
+                        const SizedBox(width: 16),
+                        Expanded(flex: 5, child: diagramPanel),
+                      ],
+                    );
+                  } else {
+                    // Narrow layout: stacked
+                    return Column(
+                      children: [
+                        Expanded(flex: 2, child: planPanel),
+                        const SizedBox(height: 12),
+                        Expanded(flex: 5, child: diagramPanel),
+                      ],
+                    );
+                  }
+                },
               ),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _MidiDialog extends StatelessWidget {
+  const _MidiDialog({required this.state});
+
+  final AppState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Row(
+        children: [
+          Icon(Icons.settings_input_composite, color: Color(0xFF2F3B47)),
+          SizedBox(width: 12),
+          Text('MIDI Settings'),
+        ],
+      ),
+      content: SizedBox(
+        width: 400,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Connection status
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: state.isConnected
+                    ? const Color(0xFFE8F5E9)
+                    : const Color(0xFFFFF6EC),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: state.isConnected
+                      ? const Color(0xFF1F6E54)
+                      : const Color(0xFFDE6B35),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    state.isConnected ? Icons.check_circle : Icons.info_outline,
+                    color: state.isConnected
+                        ? const Color(0xFF1F6E54)
+                        : const Color(0xFFDE6B35),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    state.isConnected
+                        ? 'Connected to ${state.selectedDevice?.name ?? "device"}'
+                        : 'Not connected',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'MIDI Device',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            _DeviceDropdown(state: state),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: state.refreshDevices,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Refresh'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: state.devices.isEmpty
+                        ? null
+                        : state.isConnected
+                            ? state.disconnect
+                            : state.connect,
+                    icon: Icon(state.isConnected ? Icons.link_off : Icons.link),
+                    label: Text(state.isConnected ? 'Disconnect' : 'Connect'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          state.isConnected ? const Color(0xFFDE6B35) : null,
+                      foregroundColor: state.isConnected ? Colors.white : null,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+      ],
     );
   }
 }
@@ -322,6 +476,166 @@ class _ConnectionButton extends StatelessWidget {
           backgroundColor:
               state.isConnected ? const Color(0xFF2F3B47) : null,
           foregroundColor: state.isConnected ? Colors.white : null,
+        ),
+      ),
+    );
+  }
+}
+
+class _SimplifiedPlanPanel extends StatelessWidget {
+  const _SimplifiedPlanPanel({required this.state, required this.plan});
+
+  final AppState state;
+  final PracticePlan plan;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.list_alt, size: 20, color: Color(0xFF2F3B47)),
+                const SizedBox(width: 8),
+                Text(
+                  'Practice Tasks',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView(
+                children: plan.sections.expand((section) {
+                  return [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12, bottom: 8),
+                      child: Text(
+                        section.title,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: const Color(0xFF6E6254),
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ),
+                    ...section.tasks.map((task) {
+                      final result = state.progress.results[task.id];
+                      final isSelected = state.selectedTask.id == task.id;
+                      return _CompactTaskTile(
+                        task: task,
+                        isSelected: isSelected,
+                        result: result,
+                        onTap: () => state.selectTask(task),
+                      );
+                    }),
+                  ];
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactTaskTile extends StatelessWidget {
+  const _CompactTaskTile({
+    required this.task,
+    required this.isSelected,
+    required this.result,
+    required this.onTap,
+  });
+
+  final PracticeTask task;
+  final bool isSelected;
+  final PracticeResult? result;
+  final VoidCallback onTap;
+
+  int _getDifficulty() {
+    final noteCount = task.expectedNotes.length;
+    final tempo = task.tempoBpm;
+    if (tempo >= 100 || noteCount >= 30) return 3;
+    if (tempo >= 80 || noteCount >= 20) return 2;
+    return 1;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final verdict = result?.verdict;
+    final badgeColor = verdict == TaskVerdict.pass
+        ? const Color(0xFF1F6E54)
+        : verdict == TaskVerdict.completed
+            ? const Color(0xFF2F3B47)
+            : verdict == TaskVerdict.needsWork
+                ? const Color(0xFFDE6B35)
+                : const Color(0xFFB2A89A);
+    final difficulty = _getDifficulty();
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFECE0CF) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFFDE6B35)
+                : const Color(0xFFE0D6C5),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    task.title,
+                    style: Theme.of(context).textTheme.titleSmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      // Difficulty stars
+                      ...List.generate(
+                        3,
+                        (index) => Icon(
+                          index < difficulty ? Icons.star : Icons.star_border,
+                          size: 12,
+                          color: const Color(0xFFDE6B35),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${task.tempoBpm} BPM',
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: badgeColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -561,6 +875,299 @@ class _TaskTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DiagramFocusedPanel extends StatelessWidget {
+  const _DiagramFocusedPanel({required this.state});
+
+  final AppState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final task = state.selectedTask;
+    final totalNotes = task.expectedNotes.length;
+    final progress = totalNotes == 0 ? 0.0 : state.expectedIndex / totalNotes;
+    final step =
+        (state.expectedIndex + 1).clamp(1, totalNotes == 0 ? 1 : totalNotes);
+
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Task header with title and status
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    task.title,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: state.isRunning
+                        ? const Color(0xFF1F6E54)
+                        : const Color(0xFFB2A89A),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        state.isRunning ? Icons.play_circle : Icons.pause_circle,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        state.isRunning ? 'In Session' : 'Idle',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(task.description),
+            const SizedBox(height: 16),
+            // Action buttons
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _ActionButton(
+                  label: state.isRunning ? 'Restart' : 'Start',
+                  icon: Icons.play_arrow,
+                  onPressed: state.isConnected ? state.start : null,
+                  tooltip: state.isConnected
+                      ? (state.isRunning
+                          ? 'Restart practice from beginning'
+                          : 'Start practicing this task')
+                      : 'Connect MIDI device to start',
+                  isPrimary: true,
+                ),
+                _ActionButton(
+                  label: 'Reset',
+                  icon: Icons.replay,
+                  onPressed: state.isRunning ? state.reset : null,
+                  tooltip: 'Stop and reset progress counter',
+                  isPrimary: false,
+                ),
+                _ActionButton(
+                  label: 'Complete',
+                  icon: Icons.check,
+                  onPressed: state.isRunning ? state.complete : null,
+                  tooltip: 'Mark task as complete manually',
+                  isPrimary: false,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1, color: Color(0xFFE0D6C5)),
+            const SizedBox(height: 12),
+            // LARGE FINGERING DIAGRAM (prioritized)
+            Row(
+              children: [
+                const Icon(Icons.piano, size: 20, color: Color(0xFF2F3B47)),
+                const SizedBox(width: 8),
+                Text(
+                  'Fingering Diagram',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF6EC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE0D6C5)),
+                ),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: FingeringDiagram(
+                        notes: task.expectedNotes,
+                        highlightIndex: task.expectedNotes.isEmpty
+                            ? 0
+                            : state.expectedIndex
+                                .clamp(0, task.expectedNotes.length - 1),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Progress: $step / ${totalNotes == 0 ? 1 : totalNotes}',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        Text(
+                          'Correct: ${state.correctCount}',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                color: const Color(0xFF1F6E54),
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Animated progress bar
+                    TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      tween: Tween<double>(begin: 0, end: progress),
+                      builder: (context, value, _) {
+                        return LinearProgressIndicator(
+                          value: value,
+                          minHeight: 8,
+                          backgroundColor: const Color(0xFFE0D6C5),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Color(0xFF1F6E54),
+                          ),
+                          borderRadius: BorderRadius.circular(4),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Compact info row
+            Row(
+              children: [
+                _InfoChip(label: 'Notes', value: '${task.expectedNotes.length}'),
+                const SizedBox(width: 12),
+                _InfoChip(label: 'Tempo', value: '${task.tempoBpm} BPM'),
+                const SizedBox(width: 12),
+                _InfoChip(
+                  label: 'Metronome',
+                  value: task.metronomeRequired ? 'On' : 'Off',
+                ),
+              ],
+            ),
+            if (task.metronomeRequired) ...[
+              const SizedBox(height: 12),
+              Card(
+                elevation: 1,
+                color: const Color(0xFFFFF6EC),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      MetronomeIndicator(
+                        currentBeat: state.currentBeat,
+                        isActive: state.isRunning,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            // Compact feedback
+            _CompactFeedbackPanel(state: state),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactFeedbackPanel extends StatelessWidget {
+  const _CompactFeedbackPanel({required this.state});
+
+  final AppState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE0D6C5)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.music_note,
+                        size: 14, color: Color(0xFF6E6254)),
+                    const SizedBox(width: 6),
+                    Text('Expected',
+                        style: Theme.of(context).textTheme.labelSmall),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  state.expectedNote,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: const Color(0xFF2F3B47),
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE0D6C5)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      state.lastWasCorrect ? Icons.check_circle : Icons.cancel,
+                      size: 14,
+                      color: state.lastWasCorrect
+                          ? const Color(0xFF1F6E54)
+                          : const Color(0xFFDE6B35),
+                    ),
+                    const SizedBox(width: 6),
+                    Text('Last Note',
+                        style: Theme.of(context).textTheme.labelSmall),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  state.lastNote,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: state.lastWasCorrect
+                            ? const Color(0xFF1F6E54)
+                            : const Color(0xFFDE6B35),
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

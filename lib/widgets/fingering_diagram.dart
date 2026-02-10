@@ -19,9 +19,9 @@ class FingeringDiagram extends StatelessWidget {
       painter: _FingeringPainter(
         notes: notes,
         highlightIndex: highlightIndex,
-        textStyle: Theme.of(context).textTheme.labelSmall ?? const TextStyle(),
+        textStyle: Theme.of(context).textTheme.labelMedium ?? const TextStyle(),
       ),
-      size: const Size(double.infinity, 180),
+      size: const Size(double.infinity, 280), // Increased from 180
     );
   }
 }
@@ -41,7 +41,7 @@ class _FingeringPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     const whiteKeyCount = 14;
     final keyWidth = size.width / whiteKeyCount;
-    final keyHeight = size.height * 0.55;
+    final keyHeight = size.height * 0.85; // Increased from 0.55 to use more height
     final blackKeyHeight = keyHeight * 0.65;
 
     final whitePaint = Paint()..color = const Color(0xFFF6F1E8);
@@ -83,24 +83,40 @@ class _FingeringPainter extends CustomPainter {
     for (int i = 0; i < notes.length; i++) {
       final note = notes[i];
       final cx = _noteCenterX(note.midiNote, keyWidth);
-      final cy = size.height - keyHeight - 12;
+      final isBlackKey = _isBlackKey(note.midiNote);
+
+      // Place numbers ON the keys: lower for white keys, higher for black keys
+      final cy = isBlackKey
+          ? size.height - keyHeight + (blackKeyHeight * 0.5)
+          : size.height - keyHeight * 0.25;
+
       canvas.drawCircle(
         Offset(cx, cy),
-        14,
+        16, // Slightly larger circles
         i == highlightIndex ? activePaint : notePaint,
       );
 
+      // Show finger number and note name
       final label = '${note.finger}\n${NoteNameHelper.toName(note.midiNote)}';
       final tp = TextPainter(
         text: TextSpan(
           text: label,
-          style: textStyle.copyWith(color: Colors.white, height: 1.1),
+          style: textStyle.copyWith(
+            color: Colors.white,
+            height: 1.1,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         textAlign: TextAlign.center,
         textDirection: TextDirection.ltr,
-      )..layout(maxWidth: 40);
+      )..layout(maxWidth: 50);
       tp.paint(canvas, Offset(cx - tp.width / 2, cy - tp.height / 2));
     }
+  }
+
+  bool _isBlackKey(int midiNote) {
+    final semitone = (midiNote - 60) % 12;
+    return [1, 3, 6, 8, 10].contains(semitone);
   }
 
   @override
