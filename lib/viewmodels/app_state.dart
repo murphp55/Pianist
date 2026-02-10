@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 
 import '../helpers/note_name_helper.dart';
+import '../models/key_signature.dart';
 import '../models/practice_plan.dart';
 import '../models/practice_result.dart';
 import '../models/practice_task.dart';
@@ -16,16 +17,18 @@ import '../services/progress_store.dart';
 
 class AppState extends ChangeNotifier {
   AppState()
-      : _dailyPlan = PlanFactory.buildDailyPlan(),
-        _extrasPlan = PlanFactory.buildExtrasPlan(),
+      : _selectedKey = KeySignature.cMajor,
+        _dailyPlan = PlanFactory.buildDailyPlan(key: KeySignature.cMajor),
+        _extrasPlan = PlanFactory.buildExtrasPlan(key: KeySignature.cMajor),
         _progressStore = ProgressStore() {
     _selectedTask = _dailyPlan.sections.first.tasks.first;
     _evaluator = PracticeEvaluator(_selectedTask);
     _init();
   }
 
-  final PracticePlan _dailyPlan;
-  final PracticePlan _extrasPlan;
+  KeySignature _selectedKey;
+  PracticePlan _dailyPlan;
+  PracticePlan _extrasPlan;
   final ProgressStore _progressStore;
   final MidiServiceFactory _midiFactory = MidiServiceFactory();
   final MetronomeService _metronome = MetronomeService();
@@ -66,6 +69,7 @@ class AppState extends ChangeNotifier {
   PracticePlan get currentPlan =>
       _selectedPlanIndex == 0 ? _dailyPlan : _extrasPlan;
   int get selectedPlanIndex => _selectedPlanIndex;
+  KeySignature get selectedKey => _selectedKey;
   PracticeTask get selectedTask => _selectedTask;
   TaskProgress get progress => _progress;
   String get lastNote => _lastNote;
@@ -154,6 +158,23 @@ class AppState extends ChangeNotifier {
       _resetFeedback();
       notifyListeners();
     }
+  }
+
+  void setKey(KeySignature key) {
+    if (key == _selectedKey) return;
+
+    // Rebuild plans with the new key
+    _selectedKey = key;
+    _dailyPlan = PlanFactory.buildDailyPlan(key: key);
+    _extrasPlan = PlanFactory.buildExtrasPlan(key: key);
+
+    // Reset to the first task of the current plan
+    final plan = currentPlan;
+    if (plan.sections.isNotEmpty && plan.sections.first.tasks.isNotEmpty) {
+      selectTask(plan.sections.first.tasks.first);
+    }
+
+    notifyListeners();
   }
 
   void start() {

@@ -1,81 +1,92 @@
 import '../models/fingered_note.dart';
+import '../models/key_signature.dart';
 import '../models/practice_plan.dart';
 import '../models/practice_task.dart';
 
 class PlanFactory {
-  static PracticePlan buildDailyPlan() {
-    const keyName = 'C Major';
+  static PracticePlan buildDailyPlan({KeySignature key = KeySignature.cMajor}) {
+    final keyName = key.name;
     const repeatCount = 5;
-    const rightHandRoot = 60; // C4
-    const leftHandRoot = 48; // C3
+    final rightHandRoot = key.tonicMidi;
+    final leftHandRoot = key.tonicMidi - 12; // One octave lower
     final keySlug = keyName.toLowerCase().replaceAll(' ', '-');
 
-    final scaleSteps = _majorScaleTwoOctaves();
-    final arpeggioSteps = _majorArpeggioTwoOctaves();
+    // Get scale notes and fingerings from the key signature
+    final scaleNotesRH = key.getMidiNotes();
+    final scaleFingeringRH = key.rightHandFingering;
+    final scaleNotesLH = key.getMidiNotes().map((n) => n - 12).toList();
+    final scaleFingeringLH = key.leftHandFingering;
+
+    // Get arpeggio notes and fingerings
+    final arpeggioNotesRH = key.getArpeggioMidiNotes();
+    final arpeggioFingeringRH = key.getArpeggioRightHandFingering();
+    final arpeggioNotesLH = key.getArpeggioMidiNotes().map((n) => n - 12).toList();
+    final arpeggioFingeringLH = key.getArpeggioLeftHandFingering();
+
     final inversionStepsRight = _triadInversionsTwoOctaves();
     final inversionStepsLeft = _triadInversionsTwoOctaves();
 
     return PracticePlan(sections: [
       PracticeSection(title: 'Scales', tasks: [
-        _buildTask(
+        _buildTaskWithFingering(
           id: 'scale-rh-$keySlug',
           title: '$keyName Scale (Right Hand, 2 Octaves)',
           description:
               'Right hand only, ascending 2 octaves. Repeat $repeatCount times.',
-          rootMidi: rightHandRoot,
-          steps: scaleSteps,
+          notes: scaleNotesRH,
+          fingering: scaleFingeringRH,
           repeatCount: repeatCount,
           tempoBpm: 88,
         ),
-        _buildTask(
+        _buildTaskWithFingering(
           id: 'scale-lh-$keySlug',
           title: '$keyName Scale (Left Hand, 2 Octaves)',
           description:
               'Left hand only, ascending 2 octaves. Repeat $repeatCount times.',
-          rootMidi: leftHandRoot,
-          steps: scaleSteps,
+          notes: scaleNotesLH,
+          fingering: scaleFingeringLH,
           repeatCount: repeatCount,
           tempoBpm: 84,
         ),
-        _buildTask(
+        _buildTaskWithFingering(
           id: 'scale-ht-$keySlug',
           title: '$keyName Scale (Hands Together, 2 Octaves)',
           description:
               'Hands together, ascending 2 octaves. Repeat $repeatCount times.',
-          rootMidi: rightHandRoot,
-          steps: scaleSteps,
+          notes: scaleNotesRH,
+          fingering: scaleFingeringRH,
           repeatCount: repeatCount,
           tempoBpm: 80,
         ),
       ]),
       PracticeSection(title: 'Arpeggios', tasks: [
-        _buildTask(
+        _buildTaskWithFingering(
           id: 'arpeggio-rh-$keySlug',
           title: '$keyName Arpeggio (Right Hand, 2 Octaves)',
           description:
               'Right hand only, ascending 2 octaves. Repeat $repeatCount times.',
-          rootMidi: rightHandRoot,
-          steps: arpeggioSteps,
+          notes: arpeggioNotesRH,
+          fingering: arpeggioFingeringRH,
           repeatCount: repeatCount,
           tempoBpm: 80,
         ),
-        _buildTask(
+        _buildTaskWithFingering(
           id: 'arpeggio-lh-$keySlug',
           title: '$keyName Arpeggio (Left Hand, 2 Octaves)',
           description:
               'Left hand only, ascending 2 octaves. Repeat $repeatCount times.',
-          rootMidi: leftHandRoot,
-          steps: arpeggioSteps,
+          notes: arpeggioNotesLH,
+          fingering: arpeggioFingeringLH,
           repeatCount: repeatCount,
           tempoBpm: 76,
         ),
-        _buildTask(
+        _buildTaskWithFingering(
           id: 'arpeggio-ht-$keySlug',
           title: '$keyName Arpeggio (Hands Together, 2 Octaves)',
           description:
               'Hands together, ascending 2 octaves. Repeat $repeatCount times.',
-          rootMidi: rightHandRoot,
-          steps: arpeggioSteps,
+          notes: arpeggioNotesRH,
+          fingering: arpeggioFingeringRH,
           repeatCount: repeatCount,
           tempoBpm: 72,
         ),
@@ -115,64 +126,70 @@ class PlanFactory {
     ]);
   }
 
-  static PracticePlan buildExtrasPlan() {
-    const keyName = 'C Major';
-    const rightHandRoot = 60; // C4
+  static PracticePlan buildExtrasPlan({KeySignature key = KeySignature.cMajor}) {
+    final keyName = key.name;
+    final rightHandRoot = key.tonicMidi;
     final keySlug = keyName.toLowerCase().replaceAll(' ', '-');
 
-    final scaleSteps = _majorScaleTwoOctaves();
-    final arpeggioSteps = _majorArpeggioTwoOctaves();
+    // Get scale notes and fingerings from the key signature
+    final scaleNotesRH = key.getMidiNotes();
+    final scaleFingeringRH = key.rightHandFingering;
+
+    // Get arpeggio notes and fingerings
+    final arpeggioNotesRH = key.getArpeggioMidiNotes();
+    final arpeggioFingeringRH = key.getArpeggioRightHandFingering();
+
     final inversionSteps = _triadInversionsTwoOctaves();
 
     return PracticePlan(sections: [
       PracticeSection(title: 'Technique', tasks: [
-        _buildTask(
+        _buildTaskWithFingering(
           id: 'contrary-scale-$keySlug',
           title: '$keyName Scale (Contrary Motion, 2 Octaves)',
           description:
               'Start both thumbs on middle C. Move outward to two octaves, then return inward. Count in 4/4 at 72 BPM. Keep wrists level and match touch between hands.',
-          rootMidi: rightHandRoot,
-          steps: scaleSteps,
+          notes: scaleNotesRH,
+          fingering: scaleFingeringRH,
           repeatCount: 3,
           tempoBpm: 72,
         ),
-        _buildTask(
+        _buildTaskWithFingering(
           id: 'thirds-scale-$keySlug',
           title: '$keyName Scale in Thirds (Hands Together)',
           description:
               'Play parallel thirds up two octaves and back. Use legato and even voicing between upper and lower notes. Aim for 60 BPM, 1 note per beat.',
-          rootMidi: rightHandRoot,
-          steps: scaleSteps,
+          notes: scaleNotesRH,
+          fingering: scaleFingeringRH,
           repeatCount: 2,
           tempoBpm: 60,
         ),
-        _buildTask(
+        _buildTaskWithFingering(
           id: 'sixths-scale-$keySlug',
           title: '$keyName Scale in Sixths (Hands Together)',
           description:
               'Play parallel sixths up two octaves and back. Keep the top voice singing, bottom voice soft. Start at 52 BPM, then increase to 64 BPM.',
-          rootMidi: rightHandRoot,
-          steps: scaleSteps,
+          notes: scaleNotesRH,
+          fingering: scaleFingeringRH,
           repeatCount: 2,
           tempoBpm: 52,
         ),
-        _buildTask(
+        _buildTaskWithFingering(
           id: 'arpeggio-inversions-$keySlug',
           title: '$keyName Arpeggios (Root + Inversions)',
           description:
               'Play root position, 1st inversion, and 2nd inversion arpeggios. Two octaves each, hands separate. Pause 2 beats between inversion changes.',
-          rootMidi: rightHandRoot,
-          steps: arpeggioSteps,
+          notes: arpeggioNotesRH,
+          fingering: arpeggioFingeringRH,
           repeatCount: 3,
           tempoBpm: 72,
         ),
-        _buildTask(
+        _buildTaskWithFingering(
           id: 'broken-chords-$keySlug',
           title: '$keyName Broken Chords (I–IV–V–I)',
           description:
               'Play broken triads: I, IV, V, I. Pattern: 1-5-3-5. Two octaves, hands together. Start at 60 BPM and keep pedal clean.',
-          rootMidi: rightHandRoot,
-          steps: arpeggioSteps,
+          notes: arpeggioNotesRH,
+          fingering: arpeggioFingeringRH,
           repeatCount: 3,
           tempoBpm: 60,
         ),
@@ -220,35 +237,35 @@ class PlanFactory {
         ),
       ]),
       PracticeSection(title: 'Articulation & Dynamics', tasks: [
-        _buildTask(
+        _buildTaskWithFingering(
           id: 'staccato-legato-$keySlug',
           title: '$keyName Scale (Staccato Then Legato)',
           description:
               'One octave staccato up, one octave legato down. Repeat 5 times. Keep staccato light and legato connected.',
-          rootMidi: rightHandRoot,
-          steps: scaleSteps,
+          notes: scaleNotesRH,
+          fingering: scaleFingeringRH,
           repeatCount: 5,
           tempoBpm: 80,
         ),
-        _buildTask(
+        _buildTaskWithFingering(
           id: 'dynamics-$keySlug',
           title: '$keyName Scale (pp Up, ff Down)',
           description:
               'Two octaves up from pp to mf, then two octaves down from ff to p. Maintain even rhythm at 72 BPM.',
-          rootMidi: rightHandRoot,
-          steps: scaleSteps,
+          notes: scaleNotesRH,
+          fingering: scaleFingeringRH,
           repeatCount: 3,
           tempoBpm: 72,
         ),
       ]),
       PracticeSection(title: 'Rhythm', tasks: [
-        _buildTask(
+        _buildTaskWithFingering(
           id: 'rhythm-subdivisions-$keySlug',
           title: '$keyName Scale (8ths, Triplets, 16ths)',
           description:
               'Play two octaves: 8ths up, triplets down, 16ths up, 16ths down. Keep metronome at 60 BPM.',
-          rootMidi: rightHandRoot,
-          steps: scaleSteps,
+          notes: scaleNotesRH,
+          fingering: scaleFingeringRH,
           repeatCount: 2,
           tempoBpm: 60,
         ),
@@ -264,13 +281,13 @@ class PlanFactory {
         ),
       ]),
       PracticeSection(title: 'Musicality', tasks: [
-        _buildTask(
+        _buildTaskWithFingering(
           id: 'melodic-pattern-$keySlug',
           title: '$keyName 4-Bar Melodic Pattern',
           description:
               'Create a 4-bar melody using scale tones only. Repeat it 5 times with identical rhythm and phrasing.',
-          rootMidi: rightHandRoot,
-          steps: scaleSteps,
+          notes: scaleNotesRH,
+          fingering: scaleFingeringRH,
           repeatCount: 5,
           tempoBpm: 76,
         ),
@@ -331,6 +348,38 @@ class PlanFactory {
     return steps;
   }
 
+  // New method that accepts notes with fingerings
+  static PracticeTask _buildTaskWithFingering({
+    required String id,
+    required String title,
+    required String description,
+    required List<int> notes,
+    required List<int> fingering,
+    required int repeatCount,
+    required int tempoBpm,
+  }) {
+    final sequence = <FingeredNote>[];
+    for (int i = 0; i < notes.length; i++) {
+      sequence.add(FingeredNote(
+        midiNote: notes[i],
+        finger: fingering[i],
+      ));
+    }
+    final expectedNotes = <FingeredNote>[];
+    for (var i = 0; i < repeatCount; i++) {
+      expectedNotes.addAll(sequence);
+    }
+    return PracticeTask(
+      id: id,
+      title: title,
+      description: description,
+      expectedNotes: expectedNotes,
+      metronomeRequired: true,
+      tempoBpm: tempoBpm,
+    );
+  }
+
+  // Legacy method for chord inversions (still uses steps from root)
   static PracticeTask _buildTask({
     required String id,
     required String title,

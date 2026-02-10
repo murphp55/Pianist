@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'models/key_signature.dart';
 import 'models/practice_result.dart';
 import 'models/practice_task.dart';
 import 'models/practice_plan.dart';
@@ -126,6 +127,30 @@ class AppShell extends StatelessWidget {
                     builder: (context) => _MidiDialog(state: state),
                   );
                 },
+              ),
+              // Key selector
+              PopupMenuButton<KeySignature>(
+                icon: const Icon(Icons.music_note),
+                tooltip: 'Select Key',
+                onSelected: (key) => state.setKey(key),
+                itemBuilder: (context) => KeySignature.allMajorKeys.map((key) {
+                  return PopupMenuItem<KeySignature>(
+                    value: key,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.check,
+                          size: 18,
+                          color: state.selectedKey == key
+                              ? const Color(0xFF1F6E54)
+                              : Colors.transparent,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(key.name),
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
               // Plan selector
               PopupMenuButton<int>(
