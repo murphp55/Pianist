@@ -305,38 +305,6 @@ class PlanFactory {
     ]);
   }
 
-  static List<int> _majorScaleTwoOctaves() {
-    return const [
-      0,
-      2,
-      4,
-      5,
-      7,
-      9,
-      11,
-      12,
-      14,
-      16,
-      17,
-      19,
-      21,
-      23,
-      24,
-    ];
-  }
-
-  static List<int> _majorArpeggioTwoOctaves() {
-    return const [
-      0,
-      4,
-      7,
-      12,
-      16,
-      19,
-      24,
-    ];
-  }
-
   static List<int> _triadInversionsTwoOctaves() {
     final steps = <int>[];
     for (var octave = 0; octave < 2; octave++) {

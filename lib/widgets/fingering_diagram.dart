@@ -176,14 +176,6 @@ class _FingeringPainter extends CustomPainter {
     return [1, 3, 6, 8, 10].contains(semitone);
   }
 
-  int _nextWhiteKeyMidi(int midiNote) {
-    int currentMidi = midiNote;
-    while (_isBlackKey(currentMidi)) {
-      currentMidi++;
-    }
-    return currentMidi;
-  }
-
   int _previousWhiteKeyMidi(int midiNote) {
     int currentMidi = midiNote;
     while (_isBlackKey(currentMidi)) {
